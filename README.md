@@ -11,7 +11,7 @@ La variable **_CTX** proviene de *Context* y representa al **caller** del script
 
 ### Ejemplo:
 
-Si invocas un script en el `init()` de tu formulario y tienes en tu script ejecutas lo siguiente:
+Si invocas un script en el `init()` de tu formulario y en tu script ejecutas lo siguiente:
 
 ```javascript
 _ctx.title = "Nuevo caption desde el Script"
