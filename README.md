@@ -18,3 +18,5 @@ _ctx.title = "Nuevo caption desde el Script"
 ```
 
 Tu formulario modificará su `caption` porque fue actualizado desde el script. La ventaja de este enfoque es poder utilizar tanto las **PEM's** como los cursores no solo del formulario sino del contexto que invoque el script.
+
+Otro objetivo de **FoxScript** es *facilitar* a través de una sintaxis más compacta y amigable la creación de controles y listeners en tiempo de ejecución además de proveer funciones integradas para diversos propósitos.

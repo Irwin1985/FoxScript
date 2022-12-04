@@ -1,0 +1,10 @@
+#define TT_IGNORE				3
+Error in line 12: Constant is already created with #DEFINE.
+#define TT_IGNORE				4
+Error in line 13: Constant is already created with #DEFINE.
+#define TT_EQUALITY_OPERATOR	7
+Error in line 16: Constant is already created with #DEFINE.
+#define TT_SIMPLE_ASSIGN		9
+Error in line 18: Constant is already created with #DEFINE.
+#define TT_STRING				12
+Error in line 21: Constant is already created with #DEFINE.
