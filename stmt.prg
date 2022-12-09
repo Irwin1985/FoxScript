@@ -3,7 +3,7 @@
 Define Class Block as Custom
 	oStatements = .null.
 	Function init(toStatements)
-		this.oStatement = toStatements
+		this.oStatements = toStatements
 	EndFunc
 	
 	Function accept(toVisitor)

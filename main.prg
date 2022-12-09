@@ -1,3 +1,4 @@
+Set Procedure To "ASTPrinter" additive
 Set Procedure To "Expr" additive
 Set Procedure To "FoxScript" additive
 Set Procedure To "FoxStack" additive

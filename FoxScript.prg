@@ -40,21 +40,27 @@ Define Class FoxScript As Custom
 			EndFor
 		EndIf
 		* DEBUG
+		* Set Step On
 		loParser = Createobject("Parser", loTokens)
+		* Set Step On
 		loStatements = loParser.parse()		
 
 		* Stop if there was a syntax error.
 		If This.lHadError
 			Return
-		Endif
-		loResolver = CreateObject("Resolver", this.oInterpreter)
-		loResolver.resolve(loStatements)
-		* Stop if there was a resolution error.
-		If this.lHadError
-			Return
 		EndIf
+		Local loASTPrinter
+		loASTPrinter = CreateObject("ASTPrinter")
+		? loASTPrinter.print(loStatements)
 		
-		This.oInterpreter.interpret(loStatements)
+*!*			loResolver = CreateObject("Resolver", this.oInterpreter)
+*!*			loResolver.resolve(loStatements)
+*!*			* Stop if there was a resolution error.
+*!*			If this.lHadError
+*!*				Return
+*!*			EndIf
+*!*			
+*!*			This.oInterpreter.interpret(loStatements)
 	Endfunc
 
 	Function errorLine(tnLine, tnCol, tcMessage)
@@ -62,7 +68,7 @@ Define Class FoxScript As Custom
 	Endfunc
 
 	Function reportError(tnLine, tnCol, tcWhere, tcMessage)
-		Messagebox(This.formatError("Parsing", tnLine, tnCol, tcWhere, tcMessage))
+		Messagebox(This.formatError("Parsing", tnLine, tnCol, tcWhere, tcMessage), 16, "FoxScript Error")
 		This.lHadError = TRUE
 	Endfunc
 
@@ -75,7 +81,7 @@ Define Class FoxScript As Custom
 	Endfunc
 
 	Function runtimeError(toError)
-		Messagebox(This.formatError("Runtime", toError.Token.Line, toError.Token.Col, toError.Token.lexeme, toError.Message)
+		Messagebox(This.formatError("Runtime", toError.Token.Line, toError.Token.Col, toError.Token.lexeme, toError.Message), 16, "FoxScript Error")
 		This.lHadRunTimeError = TRUE
 	Endfunc
 

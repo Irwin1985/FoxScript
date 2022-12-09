@@ -2,6 +2,7 @@
 * Token Type constants
 * ------------------------------------------------------
 #Define CONSTANT_ADDED			.T.
+#Define CRLF					CHR(13) + CHR(10)
 #Define TRUE					.T.
 #Define FALSE					.F.
 #Define TT_EOF					0
@@ -63,22 +64,23 @@
 #Define TT_TRUE					128
 #Define TT_CONTEXT				129
 #Define TT_PRINT				130
+#Define TT_EXTENDS				131
 
 * ------------------------------------------------------
 * Token Category constants
 * ------------------------------------------------------
 #Define TC_LITERAL		1
-#Define TC_IGNORABLE		2
+#Define TC_IGNORABLE	2
 #Define TC_KEYWORD		3
-#Define TC_IDENTIFIER		4
-#Define TC_ASSIGNMENT		5
+#Define TC_IDENTIFIER	4
+#Define TC_ASSIGNMENT	5
 #Define TC_GENERIC		6
 #Define TC_UNARY		7
 #Define TC_ASSIGN		8
 #Define TC_LESS			9
 #Define TC_LESS_EQ		10
 #Define TC_GREATER		11
-#Define TC_GREATER_EQ		12
+#Define TC_GREATER_EQ	12
 #Define TC_EQUAL		13
 #Define TC_BANG			14
 #Define TC_NOT_EQ		15

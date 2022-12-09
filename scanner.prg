@@ -102,6 +102,9 @@ Define Class Scanner As Custom
 		This.aSpecs[i] = Createobject("Spec", "^\bdo\b", TT_DO, TC_KEYWORD)
 
 		i = i + 1
+		This.aSpecs[i] = Createobject("Spec", "^\bextends\b", TT_EXTENDS, TC_KEYWORD)
+
+		i = i + 1
 		This.aSpecs[i] = Createobject("Spec", "^\bfalse\b", TT_FALSE, TC_KEYWORD)
 
 		i = i + 1
@@ -121,6 +124,9 @@ Define Class Scanner As Custom
 
 		i = i + 1
 		This.aSpecs[i] = Createobject("Spec", "^\bnew\b", TT_NEW, TC_KEYWORD)
+
+		i = i + 1
+		This.aSpecs[i] = Createobject("Spec", "^\bprint\b", TT_PRINT, TC_KEYWORD)
 
 		i = i + 1
 		This.aSpecs[i] = Createobject("Spec", "^\bpublic\b", TT_PUBLIC, TC_KEYWORD)
@@ -453,6 +459,8 @@ Function foxScriptTokenToStr(tnTokenType)
 		Return "TT_DO"
 	Case tnTokenType == TT_FALSE
 		Return "TT_FALSE"
+	Case tnTokenType == TT_EXTENDS
+		Return "TT_EXTENDS"		
 	Case tnTokenType == TT_LET
 		Return "TT_LET"
 	Case tnTokenType == TT_BREAK
@@ -501,6 +509,8 @@ Function foxScriptTokenToStr(tnTokenType)
 		Return "TT_CLASS"
 	Case tnTokenType == TT_IF
 		Return "TT_IF"
+	Case tnTokenType == TT_PRINT
+		Return "TT_PRINT"
 	Case tnTokenType == TT_SWITCH
 		Return "TT_SWITCH"
 	Case tnTokenType == TT_TRUE

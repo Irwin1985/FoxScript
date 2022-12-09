@@ -42,10 +42,15 @@ Define Class Parser As Custom
 			endcase
 		Catch to loEx
 			If Type('loEx.Type') == 'C'
-				this.sinchronize()
+				this.synchronize()
 			Else
 				* DEBUG
-				MessageBox(loEx.message, 16)
+				Local lcMsg
+				lcMsg = "ERROR NRO: " + ALLTRIM(STR(loEx.ERRORNO))
+				lcMsg = lcMsg + CHR(13) + "LINEA: "  	+ ALLTRIM(STR(loEx.LINENO))
+				lcMsg = lcMsg + CHR(13) + "MESSAGE: "  	+ ALLTRIM(loEx.MESSAGE)
+				lcMsg = lcMsg + CHR(13) + "LUGAR: "  	+ ALLTRIM(loEx.PROCEDURE)
+				MessageBox(lcMsg, 16)
 				* DEBUG
 			EndIf
 		EndTry
@@ -53,7 +58,25 @@ Define Class Parser As Custom
 	EndFunc
 	
 	Hidden Function classDeclaration
-		Return .null.
+		Local loName, loSuperClass, loMethods
+		loName = this.consume(TT_IDENTIFIER, "Expect class name.")
+		loSuperClass = .null.
+		
+		If this.match(TT_EXTENDS) && this class extends from another class (inheritance)
+			this.consume(TT_IDENTIFIER, "Expect superclass name.")
+			loSuperClass = CreateObject("Variable", this.previous)
+		EndIf
+		
+		this.consume(TT_LBRACE, "Expect '{' before class body.")
+		
+		loMethods = CreateObject('Collection')
+		Do while !this.check(TT_RBRACE) and !this.isAtEnd
+			loMethods.Add(this.functionDeclaration("method"))
+		EndDo
+		
+		this.consume(TT_RBRACE, "Expect '}' after class body.")
+		
+		Return CreateObject("ClassNode", loName, loSuperClass, loMethods)
 	EndFunc
 	
 	Hidden Function statement
@@ -76,29 +99,63 @@ Define Class Parser As Custom
 		EndCase 
 		Return loStatement
 	EndFunc
-	
+	* TODO(irwin): finish this later...
 	Hidden function forStatement
 		Return .null.
 	EndFunc
 	
 	Hidden function ifStatement
-		Return .null.
+		Local loCondition, loThenBranch, loElseBranch
+		this.consume(TT_LPAREN, "Expect '(' after 'if'.")
+		loCondition = this.expression()
+		this.consume(TT_RPAREN, "Expect ')' after if condition.")
+		loThenBranch = this.statement()
+		loElseBranch = .null.
+		If this.match(TT_ELSE)
+			loElseBranch = this.statement()
+		EndIf
+
+		Return CreateObject("IfNode", loCondition, loThenBranch, loElseBranch)
 	EndFunc
 	
 	Hidden function printStatement
-		Return .null.
+		Local loExpression
+		loExpression = this.expression()
+		this.consume(TT_SEMICOLON, "Expect ';' after value.")
+		Return CreateObject("Print", loExpression)
 	EndFunc
 	
 	Hidden function returnStatement
-		Return .null.
+		Local loKeyword, loValue
+		loKeyword = this.previous		
+		loValue = .null.
+		If !this.check(TT_SEMICOLON)
+			loValue = this.expression()
+		EndIf
+		this.consume(TT_SEMICOLON, "Expect ';' after return value.")
+		Return CreateObject("ReturnNode", lokeyword, loValue)		
 	EndFunc
 	
 	Hidden function varDeclaration
-		Return .null.
+		Local loName, loInitializer
+		loName = this.consume(TT_IDENTIFIER, "Expect variable name.")
+		loInitializer = .null.
+		If this.match(TT_SIMPLE_ASSIGN)
+			loInitializer = this.expression()
+		EndIf
+		this.consume(TT_SEMICOLON, "Expect ';' after variable declaration.")
+		
+		Return CreateObject("Var", loName, loInitializer)
 	EndFunc
 	
 	Hidden function whileStatement
-		Return .null.
+		this.consume(TT_LPAREN, "Expect '(' after 'while'.")
+		Local loCondition, loBody
+		loCondition = this.expression()
+		this.consume(TT_RPAREN, "Expect ')' after condition.")
+		loBody = this.statement()
+		
+		Return CreateObject("WhileNode", loCondition, loBody)
 	EndFunc
 	
 	Hidden function expressionStatement
@@ -108,12 +165,37 @@ Define Class Parser As Custom
 		Return CreateObject("Expression", loExpr)
 	EndFunc
 	
-	Hidden function functionDeclaration
-		Return .null.
+	Hidden function functionDeclaration(tcKind)
+		Local loName, loParams, loBody
+		loName = this.consume(TT_IDENTIFIER, "Expect " + tcKind + " name.")
+		this.consume(TT_LPAREN, "Expect '(' after " + tcKind + " name.")
+		
+		loParams = CreateObject('Collection')
+		If !this.check(TT_RPAREN)
+			loParams.Add(this.consume(TT_IDENTIFIER, "Expect parameter name."))
+			Do while this.match(TT_COMMA)
+				loParams.Add(this.consume(TT_IDENTIFIER, "Expect parameter name."))
+			EndDo
+		EndIf
+		this.consume(TT_RPAREN, "Expect ')' after parameters.")
+		* Parse Body
+		this.consume(TT_LBRACE, "Expect '{' before " + tcKind + " body.")
+		loBody = this.blockStatement()
+		
+		Return CreateObject("FunctionNode", loName, loParams, loBody)		
 	EndFunc
 	
 	Hidden function blockStatement
-		Return .null.
+		Local loStatements
+		loStatements = CreateObject('Collection')
+		
+		Do while !this.check(TT_RBRACE) and !this.isAtEnd
+			loStatements.Add(this.declaration())
+		EndDo
+		
+		this.consume(TT_RBRACE, "Expect '}' after block.")
+		
+		Return loStatements
 	EndFunc
 	
 	* ==========================================================
@@ -134,7 +216,7 @@ Define Class Parser As Custom
 			case loExpr.class == 'Variable' && 
 				Return CreateObject("Assign", loExpr.oName, loValue)
 			Case loExpr.class == 'Get'
-				Return CreateObject("Set", loExpr.oName, loExpr.oValue)
+				Return CreateObject("Set", loExpr.oObject, loExpr.oName, loValue)
 			Otherwise
 				this.parseError(loEquals, "Invalid assignment target.")
 			endcase
@@ -224,6 +306,7 @@ Define Class Parser As Custom
 
 	Hidden function finishCall(toCallee)
 		Local loArguments, loParen
+		loArguments = CreateObject('Collection')
 		If !this.check(TT_RPAREN)
 			loArguments.add(this.expression())
 			Do while this.match(TT_COMMA)
@@ -253,14 +336,15 @@ Define Class Parser As Custom
 	EndFunc
 	
 	Hidden function primary	
-		Set Step On	
 		Do case
 		Case this.match(TT_FALSE)
 			Return CreateObject("Literal", false)
 		Case this.match(TT_TRUE)
 			Return CreateObject("Literal", true)
-		Case this.match(TT_NULL)
+		Case this.match(TT_NULL)		
 			Return CreateObject("Literal", .null.)
+		Case this.match(TT_NUMBER, TT_STRING)
+			Return CreateObject("Literal", this.previous.literal)
 		Case this.match(TT_SUPER)
 			Local loKeyword, loMethod
 			loKeyword = this.previous
@@ -332,13 +416,14 @@ Define Class Parser As Custom
 	Endfunc
 	
 	Hidden Procedure parseError(toToken, tcErrorMessage)
+		_screen.foxScript.errorToken(toToken, tcErrorMessage)
 		Local oExp
 		Try
 			Throw
 		Catch To oExp
 			=AddProperty(oExp, 'type', 'ParseError')
 			=AddProperty(oExp, 'token', toToken)
-			oExp.Message		= tcErrorMessage
+			oExp.Message = tcErrorMessage
 			Throw
 		Endtry
 	endproc
