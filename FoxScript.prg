@@ -6,9 +6,20 @@
 Define Class FoxScript As Custom
 	lHadError = .f.
 	lHadRunTimeError = .f.
-	Hidden oIterpreter
+	oContext = .null.
+	Hidden oInterpreter
 
-	Function Run(tcFileNameOrScript)
+	Function init
+		this.oInterpreter = CreateObject("Interpreter")
+	EndFunc
+
+	Function Run(toContextOrScript, tcFileNameOrScript)
+		If Pcount() = 2 
+			this.oContext = toContextOrScript
+		Else
+			tcFileNameOrScript = toContextOrScript
+		endif
+
 		If Empty(tcFileNameOrScript)
 			This.runPrompt()
 		Else
@@ -49,17 +60,17 @@ Define Class FoxScript As Custom
 		If This.lHadError
 			Return
 		EndIf
-		Local loASTPrinter
-		loASTPrinter = CreateObject("ASTPrinter")
-		? loASTPrinter.print(loStatements)
-		
-*!*			loResolver = CreateObject("Resolver", this.oInterpreter)
-*!*			loResolver.resolve(loStatements)
-*!*			* Stop if there was a resolution error.
-*!*			If this.lHadError
-*!*				Return
-*!*			EndIf
-*!*			
+*!*			Local loASTPrinter
+*!*			loASTPrinter = CreateObject("ASTPrinter")
+*!*			? loASTPrinter.print(loStatements)
+		Set Step On
+		loResolver = CreateObject("Resolver", this.oInterpreter)
+		loResolver.resolve(loStatements)
+		* Stop if there was a resolution error.
+		If this.lHadError
+			Return
+		EndIf
+
 *!*			This.oInterpreter.interpret(loStatements)
 	Endfunc
 
