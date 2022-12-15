@@ -8,18 +8,20 @@
 Define Class Interpreter As Custom
 	oGlobals = .Null.
 	oEnvironment = .Null.
+	oBuiltins = .null.
 	oLocals = .Null.
 	oRegEx = .null.
-	nDepth = 0
+	nDepth = 0	
 	cFunctionList = ''
 	cClassList = ''
-	cInitialization = ''
+	cInitialization = ''	
 	
 	Function Init
 		with this
 			.cInitialization = ''
 			.cFunctionList = ''
 			.cClassList = ''
+			.oBuiltins = CreateObject("Dictionary")			
 			.oRegEx = CreateObject("VBScript.RegExp")
 			.oRegEx.IgnoreCase = .F.
 			.oRegEx.Global = .T.
@@ -27,7 +29,15 @@ Define Class Interpreter As Custom
 			.oGlobals = Createobject("Environment", .Null.)
 			.oEnvironment = This.oGlobals
 			.oLocals = Createobject("Dictionary")		
-		endwith
+		EndWith
+		* Register all builtins functions
+		With this.oBuiltins
+			.Put('clock', '0:SECONDS')
+			.Put('error', '2:<$MESSAGE,$TITLE_C_OPT>:MESSAGEBOX($MESSAGE, 16, $TITLE_C_OPT)')
+			.Put('question', '2:<$MESSAGE,$TITLE_C_OPT>:MESSAGEBOX($MESSAGE, 36, $TITLE_C_OPT)')
+			.Put('alert', '2:<$MESSAGE,$TITLE_C_OPT>:MESSAGEBOX($MESSAGE, 48, $TITLE_C_OPT)')
+			.Put('info', '2:<$MESSAGE,$TITLE_C_OPT>:MESSAGEBOX($MESSAGE, 64, $TITLE_C_OPT)')
+		EndWith
 	Endfunc
 
 	Function interpret(toStatements)
@@ -292,7 +302,7 @@ Define Class Interpreter As Custom
 
 	Function visitCallExpr(toExpr)
 		Local lcOutput, i, lcArguments
-		lcOutput = This.Evaluate(toExpr.oCallee)
+		lcOutput = This.Evaluate(toExpr.oCallee)		
 		i = 0
 		lcArguments = ''
 		For Each loArgument In toExpr.oArguments
@@ -305,7 +315,40 @@ Define Class Interpreter As Custom
 
 		If '.execute(:PARAMS)'$lcOutput
 			Return 'EVALUATE(' + Strtran(lcOutput, ':PARAMS', lcArguments) + ')'
-		Else			
+		Else
+			If this.oBuiltins.ContainsKey(lcOutput)
+				Local lnArity, lcParam, lcParameters, lcFunctionName
+				lcOutput = this.oBuiltins.Get(lcOutput)
+				lnArity = Val(GetWordNum(lcOutput, 1, ':'))
+				lcParameters = StrExtract(GetWordNum(lcOutput, 2, ':'), '<', '>')
+				lcFunctionName = GetWordNum(lcOutput, 3, ':')
+				If lnArity > 0
+					If toExpr.oArguments.count > 0
+						For i = 1 to lnArity
+							lcParam = GetWordNum(lcParameters, i, ',')
+							If i <= toExpr.oArguments.Count
+								lcFunctionName = Strtran(lcFunctionName, lcParam, This.Evaluate(toExpr.oArguments.Item(i)))
+							Else
+								* Check if the parameter is optional
+								If Right(lcParam, 3) == 'OPT'
+									Local lcType
+									lcType = GetWordNum(lcParam, 2, '_')
+									DO CASE
+									CASE lcType == 'C'
+										lcFunctionName = Strtran(lcFunctionName, lcParam, '""')
+									CASE lcType == 'N'
+										lcFunctionName = Strtran(lcFunctionName, lcParam, "0")									
+									OTHERWISE
+									ENDCASE
+								EndIf
+							EndIf
+						EndFor
+					Else
+						This.runtimeError(toExpr.oParen, "Too few arguments.")
+					EndIf
+				endif
+				Return lcFunctionName
+			EndIf
 			Return lcOutput + '(' + lcArguments + ')'
 		EndIf
 	Endfunc
